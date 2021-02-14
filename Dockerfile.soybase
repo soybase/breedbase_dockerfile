@@ -1,0 +1,5 @@
+FROM breedbase/breedbase:v0.19
+
+COPY entrypoint.sh /entrypoint.sh
+COPY sgn_local.conf.template /home/production/cxgn/sgn/
+RUN sed '/^dbpass/s/.*/dbpass postgres/' /home/production/cxgn/sgn/sgn_local.conf.template > /home/production/cxgn/sgn/sgn_local.conf

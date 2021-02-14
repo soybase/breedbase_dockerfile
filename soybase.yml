@@ -1,0 +1,18 @@
+services:
+  breedbase:
+    build:
+      context: .
+      dockerfile: Dockerfile.soybase
+    restart: always
+    environment:
+      MODE: 'PRODUCTION'
+    ports:
+      - "${PORT:-8080}:8080"
+
+  breedbase_db:
+    restart: always
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+
+volumes:
+  dbdata:
