@@ -12,6 +12,9 @@ services:
       - type: bind
         source: ./repos
         target: /home/production/cxgn
+      - type: bind
+        source: ./entrypoint.sh
+        target: /entrypoint.sh
       - archive:/home/production/archive
       - tmp:/home/production/tmp
       - cache:/home/production/cache
