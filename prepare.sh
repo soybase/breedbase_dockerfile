@@ -25,7 +25,6 @@ git clone --branch 4.1.0 --depth 1 https://github.com/opencv/opencv_contrib repo
 
 # local libs
 git clone https://github.com/solgenomics/perl-local-lib repos/local-lib
-git clone https://github.com/solgenomics/R_libs repos/R_libs
 
 # Mason website skins
 git clone https://github.com/solgenomics/cassava.git repos/cassava

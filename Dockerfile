@@ -1,4 +1,4 @@
-FROM debian:stretch
+FROM ubuntu:20.04
 
 LABEL maintainer="lam87@cornell.edu"
 
@@ -30,29 +30,16 @@ RUN mkdir /var/log/sgn
 
 WORKDIR /home/production/cxgn
 
-# add cran backports repo and required deps
-#
-RUN echo "deb http://lib.stat.cmu.edu/R/CRAN/bin/linux/debian stretch-cran35/" >> /etc/apt/sources.list
-
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" | tee  /etc/apt/sources.list.d/pgdg.list
-
 # install system dependencies
 #
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-RUN apt-get update -y --allow-unauthenticated 
-RUN apt-get upgrade -y
-RUN apt-get install build-essential pkg-config apt-utils gnupg2 curl wget -y 
-# key for cran-backports (not working though)
-#
-RUN bash -c "apt-key adv --keyserver keys.gnupg.net --recv-key 'E19F5F87128899B192B1A2C2AD5F960A256A04AF' 1>/key.out   2> /key.err"
-
-RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc |  apt-key add -
+RUN apt update
+RUN apt upgrade -y
+RUN apt install -y build-essential pkg-config apt-utils gnupg2 curl wget
 
 #RUN apt-get update --fix-missing -y
-RUN apt-get update -y
 
-RUN apt-get install -y aptitude 
-RUN aptitude install -y libterm-readline-zoid-perl nginx starman emacs gedit vim less sudo htop git dkms linux-headers-4.9.0-11-amd64 perl-doc ack-grep make xutils-dev nfs-common lynx xvfb ncbi-blast+ libmunge-dev libmunge2 munge slurm-wlm slurmctld slurmd libslurm-perl libssl-dev graphviz lsof imagemagick mrbayes muscle bowtie bowtie2 blast2 postfix mailutils libcupsimage2 postgresql-client-12 libglib2.0-dev libglib2.0-bin screen apt-transport-https libgdal-dev libproj-dev libudunits2-dev locales locales-all rsyslog cron
+RUN apt install -y libterm-readline-zoid-perl nginx starman emacs gedit vim less sudo htop git perl-doc ack-grep make xutils-dev nfs-common lynx xvfb ncbi-blast+ libmunge-dev libmunge2 munge slurm-wlm slurmctld slurmd libslurm-perl libssl-dev graphviz lsof imagemagick mrbayes muscle bowtie bowtie2 blast2 postfix mailutils libcupsimage2 postgresql-client-12 libglib2.0-dev libglib2.0-bin screen apt-transport-https libgdal-dev libproj-dev libudunits2-dev locales locales-all rsyslog cron
 
 # Set the locale correclty to UTF-8
 RUN locale-gen en_US.UTF-8
@@ -68,11 +55,85 @@ RUN chmod 777 /var/spool/ \
     && /usr/sbin/create-munge-key \
     && ln -s /var/lib/slurm-llnl /var/lib/slurm
 
-RUN apt-get install r-base r-base-dev libopenblas-base -y --allow-unauthenticated
-
-# required for R-package spdep, and other dependencies of agricolae
+# required Ubuntu package dependencies for R packages (per https://packagemanager.rstudio.com/)
+# + OpenBLAS for performance & littler for concise install commands
 #
-RUN apt-get install libudunits2-dev libproj-dev libgdal-dev -y
+RUN apt install -y --no-install-recommends \
+  imagemagick \
+  libcairo2-dev \
+  libcurl4-openssl-dev \
+  libfontconfig1-dev \
+  libfreetype6-dev \
+  libgl1-mesa-dev \
+  libglu1-mesa-dev \
+  libicu-dev \
+  libjpeg-dev \
+  libmagick++-dev \
+  libopenblas-base \
+  libpng-dev \
+  libssl-dev \
+  libxml2-dev \
+  littler \
+  make \
+  pandoc \
+  r-base \
+  r-base-dev \
+  zlib1g-dev
+
+# 2021-02-18 package snapshot
+# https://docs.rstudio.com/rspm/admin/serving-binaries/#binaries-r-configuration-linux
+RUN echo 'options(repos = c(REPO_NAME = "https://packagemanager.rstudio.com/all/__linux__/focal/1444919"))' > $(R RHOME)/etc/Rprofile.site \
+  && echo 'options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version$platform, R.version$arch, R.version$os)))' >> $(R RHOME)/etc/Rprofile.site
+
+# littler setup
+RUN Rscript -e 'install.packages("docopt")' \
+  && ln -s $(R RHOME)/site-library/littler/examples/install2.r \
+           $(R RHOME)/site-library/littler/examples/installGithub.r /usr/local/bin/
+
+# R dependencies for repos/sgn
+#
+RUN install2.r --error --skipinstalled \
+  DT \
+  RCurl \
+  agricolae \
+  catchr \
+  data.table \
+  devtools \
+  dplyr \
+  effects \
+  emmeans \
+  gge \
+  ggplot2 \
+  gmailr \
+  grid \
+  gridExtra \
+  hrbrthemes \
+  httr \
+  jsonlite \
+  knitr \
+  leaflet \
+  lme4 \
+  lmerTest \
+  ltm \
+  lubridate \
+  magrittr \
+  methods \
+  na.tools \
+  readr \
+  rjson \
+  rrBLUP \
+  shiny \
+  shinyjs \
+  shinythemes \
+  stringr \
+  tidyr \
+  tidyverse \
+  viridis \
+  waves
+
+RUN installGithub.r \
+  onaio/ona.R \
+  reyzaguirre/st4gi
 
 # copy some tools that don't have a Debian package
 #
@@ -106,7 +167,7 @@ RUN apt-get install libcairo2-dev -y
 
 # GD Perl module needs this:
 #
-RUN apt-get install libgd2-xpm-dev -y
+RUN apt-get install libgd-dev -y
 
 # postgres driver DBD::Pg needs this:
 #
@@ -116,7 +177,7 @@ RUN apt-get install libpq-dev -y
 #
 RUN apt-get install libmoosex-runnable-perl -y
 
-RUN apt-get install libgdbm3 libgdm-dev -y
+RUN apt-get install libgdm-dev -y
 RUN apt-get install nodejs -y
 
 WORKDIR /home/production/cxgn/sgn
@@ -127,9 +188,6 @@ ENV PERL5LIB=/home/production/cxgn/local-lib/:/home/production/cxgn/local-lib/li
 #
 ENV HOME=/home/production
 ENV PGPASSFILE=/home/production/.pgpass
-RUN echo "R_LIBS_USER=/home/production/cxgn/R_libs" >> /etc/R/Renviron
-RUN mkdir -p /home/production/cxgn/sgn/R_libs
-ENV R_LIBS_USER=/home/production/cxgn/R_libs
 #RUN rm /home/production/cxgn/sgn/static/static
 #RUN rm /home/production/cxgn/sgn/static/s
 #RUN rm /home/production/cxgn/sgn/documents
