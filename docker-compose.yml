@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   breedbase:
     environment:
@@ -20,7 +18,8 @@ services:
       - 25:25
     image: breedbase/breedbase:v0.19
     depends_on:
-      - breedbase_db
+      breedbase_db:
+        condition: service_healthy
     container_name: breedbase_web
 
   breedbase_db:
@@ -29,8 +28,8 @@ services:
     image: postgres:12.6
     container_name: breedbase_db
     environment:
-      POSTGRES_DB: breedbase
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${PGDATABASE}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
     healthcheck:
       test: "pg_isready -U postgres -d $${POSTGRES_DB} || exit 1"
       interval: 10s
