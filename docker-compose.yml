@@ -16,7 +16,8 @@ services:
     ports:
       - 7080:8080
       - 25:25
-    image: breedbase/breedbase:v0.19
+    build: .
+    image: breedbase/breedbase:v0.20
     depends_on:
       breedbase_db:
         condition: service_healthy
