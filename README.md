@@ -119,12 +119,17 @@ You need to write an `sgn_local.conf` file specific to your service. A [template
 
 3. Deploy with docker-compose, then follow [the instructions below](#access-and-configure) to access and configure your new breedbase deployment!
     ```
+    docker-compose pull # optional, pull breedbase/breedbase image from Docker Hub instead of building from Dockerfile
     docker-compose up -d
     ```
 
     This will deploy 2 containers, `breedbase_web` and `breedbase_db`, combined in a single service named `breedbase`
     The deployment will set the container environment MODE to DEVELOPMENT, which will run the web server using Catalyst instead of Starman. In this configuration, the server will restart when any changes are detected in the config file or sgn perl libraries.
 
+    To test changes to the Dockerfile, build a new breedbase image:
+    ```
+    docker-compose up -d --build # or "docker-compose build && docker-compose up -d"
+    ```
 
 ## Access and Configure
 
